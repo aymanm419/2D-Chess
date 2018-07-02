@@ -6,7 +6,7 @@
 class Drawer
 {
     public:
-        void Draw(Sprite& curSprite,Init& CurGame);
+        void Draw(Sprite* curSprite,Init& CurGame);
     protected:
 
     private:

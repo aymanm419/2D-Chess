@@ -15,6 +15,15 @@ Sprite::Sprite(SDL_Renderer* renderer,char* FileDir,int x,int y,int w,int h)
     timeSinceLastMove = 0;
     cropRect.x = -1;
 }
+Sprite::Sprite(const Sprite& sp)
+{
+    curTexture = sp.getTexture();
+    img_width = sp.img_width;
+    img_height = sp.img_height;
+    setRectDetails(sp.mainRect.x,sp.mainRect.y,sp.mainRect.w,sp.mainRect.h);
+    setCropDetails(sp.cropRect.x,sp.cropRect.y,sp.cropRect.w,sp.cropRect.h);
+    timeSinceLastMove = 0;
+}
 Sprite::~Sprite()
 {
     SDL_DestroyTexture(curTexture);
@@ -41,5 +50,6 @@ void Sprite::setRectDetails(int x,int y,int w,int h)
     mainRect.w = w;
     mainRect.h = h;
 }
+
 
 

@@ -7,30 +7,29 @@
 #include "Drawer.h"
 #include <vector>
 int32_t mouseX,mouseY;
-char* backgroundImg = "download.png";
-char* ChessImg = "ChessSprite.png";
-std::vector<Sprite> WhitePieces;
-std::vector<Sprite> BlackPieces;
-void InitializeGame(Sprite& Piece)
-{
-    Piece.setRectDetails(0,0,67,67);
-    Piece.setCropDetails(Piece.img_width/6*2,0,Piece.img_width/6,Piece.img_height/2);
-}
+char* backgroundImg = "chessBack.bmp";
+
+std::vector<Sprite*> BlackPieces;
+std::vector<Sprite*> WhitePieces;
+
 int main( int argc, char * argv[] )
 {
-    Init Game;
     Drawer GameDrawer;
-    Sprite curBoard(Game.renderer,backgroundImg,0,0,MAX_WINDOWS_WIDTH,MAX_WINDOWS_HEIGHT);
-    Sprite TestPiece(Game.renderer,ChessImg,0,MAX_WINDOWS_HEIGHT/7*0,67,67);
-    InitializeGame(TestPiece);
+    Init Game;
+    Sprite* curBoard = new Sprite(Game.renderer,backgroundImg,0,0,MAX_WINDOWS_WIDTH,MAX_WINDOWS_HEIGHT);
+    Game.InitializeBlack(BlackPieces);
+    Game.InitializeWhite(WhitePieces);
     while(!Game.quit && Game.mainEvent->type != SDL_QUIT)
     {
         Game.Begin();
         GameDrawer.Draw(curBoard,Game);
-        GameDrawer.Draw(TestPiece,Game);
+        SDL_GetMouseState(&mouseX,&mouseY);
+        for(std::vector<Sprite*>::iterator it = BlackPieces.begin();it != BlackPieces.end();it++)
+            GameDrawer.Draw(*it,Game);
+        for(std::vector<Sprite*>::iterator it = WhitePieces.begin();it != WhitePieces.end();it++)
+            GameDrawer.Draw(*it,Game);
         Game.End();
     }
-    Game.~Init();
-    curBoard.~Sprite();
+
     return 1;
 }

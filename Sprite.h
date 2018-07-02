@@ -4,12 +4,13 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <vector>
-#define MAX_WINDOWS_WIDTH 600
-#define MAX_WINDOWS_HEIGHT 480
+#define MAX_WINDOWS_WIDTH 512
+#define MAX_WINDOWS_HEIGHT 512
 class Sprite
 {
     public:
         Sprite(SDL_Renderer* renderer,char* FileDir,int x,int y,int w,int h);
+        Sprite(const Sprite& sp);
         virtual ~Sprite();
         void SetX(int value);
         void SetY(int value);
@@ -19,7 +20,7 @@ class Sprite
         void setRectDetails(int x,int y,int w,int h);
         SDL_Rect getMainRect() {return mainRect;}
         SDL_Rect getCropRect() {return cropRect;}
-        SDL_Texture* getTexture() {return curTexture;}
+        SDL_Texture* getTexture() const {return curTexture;}
         int32_t img_width,img_height;
     protected:
 
