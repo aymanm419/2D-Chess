@@ -16,15 +16,19 @@ class Init
         SDL_Event* mainEvent;
         void Begin();
         void End();
-        void InitializeBlack(std::vector<Sprite*>& BlackPieces);
-        void InitializeWhite(std::vector<Sprite*>& WhitePieces);
-
+        void InitializeBlack();
+        void InitializeWhite();
+        std::vector<Sprite*>& getBlackPieces() {return BlackPieces;}
+        std::vector<Sprite*>& getWhitePieces() {return WhitePieces;}
+        int32_t mouseX,mouseY;
     protected:
 
     private:
         char* ChessImg = "ChessSprite.png";
         int SquareWidth = 64;
         int SquareHeight= 64;
+        std::vector<Sprite*> BlackPieces;
+        std::vector<Sprite*> WhitePieces;
 };
 
 #endif // INIT_H
