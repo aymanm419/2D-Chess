@@ -14,6 +14,7 @@ class Sprite
         virtual ~Sprite();
         void SetX(int value);
         void SetY(int value);
+        void setPosition(int X,int Y);
         int getX() {return mainRect.x;}
         int getY() {return mainRect.y;}
         void setCropDetails(int cropX,int cropY,int cropW,int cropH);
@@ -28,7 +29,6 @@ class Sprite
         SDL_Texture* curTexture;
         SDL_Rect mainRect;
         SDL_Rect cropRect;
-        uint32_t timeSinceLastMove;
 };
 
 #endif // Sprite_H

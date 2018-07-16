@@ -10,7 +10,7 @@
 char* backgroundImg = "chessBack.bmp";
 Sprite* curBoard;
 Sprite* SpriteTile;
-Sprite* TemporaryChoosen;
+Piece* TemporaryChoosen;
 int main( int argc, char * argv[] )
 {
     Drawer GameDrawer;
@@ -24,29 +24,29 @@ int main( int argc, char * argv[] )
     {
         Game.Begin();
         GameDrawer.Draw(curBoard,Game);
-        if(GameHandler.lastChoosenSprite != NULL)
+        if(GameHandler.lastChoosenPiece != NULL)
         {
-            SpriteTile->setPosition(GameHandler.lastChoosenSprite->getX(),GameHandler.lastChoosenSprite->getY());
+            SpriteTile->setPosition(GameHandler.lastChoosenPiece->getImg()->getX(),GameHandler.lastChoosenPiece->getImg()->getY());
             GameDrawer.Draw(SpriteTile,Game);
         }
-        GameDrawer.DrawVector(Game.getBlackPieces(),Game);
-        GameDrawer.DrawVector(Game.getWhitePieces(),Game);
+        if(GameHandler.TileEffects.size() > 0)
+            GameDrawer.DrawSprites(GameHandler.TileEffects,Game);
+        GameDrawer.DrawPieces(Game.getPieces(),Game);
         if(GameHandler.isMouseDown(Game))
         {
             SDL_GetMouseState(&Game.mouseX,&Game.mouseY);
             if(GameHandler.isValidClick(Game))
             {
                 GameHandler.initalizeClick(Game);
-                TemporaryChoosen = GameHandler.getSpriteInRectangle((GameHandler.turn ? Game.getBlackPieces() : Game.getWhitePieces()),
-                                                Game.mouseX / 64,Game.mouseY / 64);
-                if(GameHandler.lastChoosenSprite == NULL)
-                    GameHandler.lastChoosenSprite = TemporaryChoosen;
+                TemporaryChoosen = GameHandler.getPieceInRectangle(Game.getPieces(),Game.mouseX,Game.mouseY);
+                if(GameHandler.lastChoosenPiece == NULL)
+                    GameHandler.ChoosePiece(Game,TemporaryChoosen);
                 else
                 {
                     if(TemporaryChoosen != NULL)
-                        GameHandler.lastChoosenSprite = TemporaryChoosen;
+                        GameHandler.ChoosePiece(Game,TemporaryChoosen);
                     else
-                        GameHandler.MovePiece(Game.mouseX,Game.mouseY);
+                        GameHandler.MovePiece(Game);
                 }
             }
         }

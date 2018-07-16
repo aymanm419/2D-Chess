@@ -18,6 +18,12 @@ Init::~Init()
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     quit = true;
+    for(std::vector<Piece*>::iterator it = GamePieces.begin();it != GamePieces.end();it++)
+    {
+        (*it)->PieceImg->~Sprite();
+        (*it)->~Piece();
+        delete (*it);
+    }
     delete mainEvent;
 }
 void Init::Begin()
@@ -31,67 +37,85 @@ void Init::End()
     SDL_RenderPresent(renderer);
     return;
 }
-void Init::InitializeBlack(std::vector<Sprite*>& BlackPieces)
+void Init::InitializeBlack()
 {
-    Sprite* Piece;
+    Sprite* Pi;
+    Piece* temporaryPiece;
     for(int i = 2;i <= 4;i++)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(i-2) ,0,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
-        BlackPieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(i-2) ,0,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(true,i-2);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 1;i >= 0;i--)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(4-i),0,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
-        BlackPieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(4-i),0,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(true,4-i);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 4;i >= 2;i--)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(9-i),0,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
-        BlackPieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(9-i),0,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(true,i-2);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 0;i <= 7;i++)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*5,0,SquareWidth,SquareWidth);
-        BlackPieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*5,0,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(true,5);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
 }
-void Init::InitializeWhite(std::vector<Sprite*>& WhitePieces)
+void Init::InitializeWhite()
 {
-    Sprite* Piece;
+    Sprite* Pi;
+    Piece* temporaryPiece;
     for(int i = 2;i <= 4;i++)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(i-2),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
-        WhitePieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(i-2),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(false,i-2);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 1;i >= 0;i--)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(4-i),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
-        WhitePieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(4-i),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(false,4-i);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 4;i >= 2;i--)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*(9-i),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
-        WhitePieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*(9-i),MAX_WINDOWS_HEIGHT-SquareHeight,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(false,i-2);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
     for(int i = 0;i <= 7;i++)
     {
-        Piece = new Sprite(renderer,ChessImg,0,0,0,0);
-        Piece->setRectDetails(SquareWidth*i,MAX_WINDOWS_HEIGHT-2*SquareHeight,SquareWidth,SquareHeight);
-        Piece->setCropDetails(SquareWidth*5,SquareHeight,SquareWidth,SquareWidth);
-        WhitePieces.push_back(Piece);
+        Pi = new Sprite(renderer,ChessImg,0,0,0,0);
+        Pi->setRectDetails(SquareWidth*i,MAX_WINDOWS_HEIGHT-2*SquareHeight,SquareWidth,SquareHeight);
+        Pi->setCropDetails(SquareWidth*5,SquareHeight,SquareWidth,SquareWidth);
+        temporaryPiece = new Piece(false,5);
+        temporaryPiece->PieceImg = Pi;
+        GamePieces.push_back(temporaryPiece);
     }
 }

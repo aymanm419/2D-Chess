@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 #include "Sprite.h"
 #include <vector>
+#include "Piece.h"
 class Init
 {
     public:
@@ -18,8 +19,7 @@ class Init
         void End();
         void InitializeBlack();
         void InitializeWhite();
-        std::vector<Sprite*>& getBlackPieces() {return BlackPieces;}
-        std::vector<Sprite*>& getWhitePieces() {return WhitePieces;}
+        std::vector<Piece*>& getPieces() {return GamePieces;}
         int32_t mouseX,mouseY;
     protected:
 
@@ -27,8 +27,7 @@ class Init
         char* ChessImg = "ChessSprite.png";
         int SquareWidth = 64;
         int SquareHeight= 64;
-        std::vector<Sprite*> BlackPieces;
-        std::vector<Sprite*> WhitePieces;
+        std::vector<Piece*> GamePieces;
 };
 
 #endif // INIT_H

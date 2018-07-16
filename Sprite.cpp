@@ -2,17 +2,11 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
-#define epison 1e-4
-#define MATH_PI 3.1415926535897932384626433832795
 Sprite::Sprite(SDL_Renderer* renderer,char* FileDir,int x,int y,int w,int h)
 {
     curTexture = IMG_LoadTexture(renderer,FileDir);
     SDL_QueryTexture(curTexture,NULL,NULL,&img_width,&img_height);
-    mainRect.x = x;
-    mainRect.y = y;
-    mainRect.w = w;
-    mainRect.h = h;
-    timeSinceLastMove = 0;
+    setRectDetails(x,y,w,h);
     cropRect.x = -1;
 }
 Sprite::Sprite(const Sprite& sp)
@@ -22,7 +16,6 @@ Sprite::Sprite(const Sprite& sp)
     img_height = sp.img_height;
     setRectDetails(sp.mainRect.x,sp.mainRect.y,sp.mainRect.w,sp.mainRect.h);
     setCropDetails(sp.cropRect.x,sp.cropRect.y,sp.cropRect.w,sp.cropRect.h);
-    timeSinceLastMove = 0;
 }
 Sprite::~Sprite()
 {
@@ -35,6 +28,11 @@ void Sprite::SetX(int value)
 void Sprite::SetY(int value)
 {
     mainRect.y = value;
+}
+void Sprite::setPosition(int X,int Y)
+{
+    mainRect.x = X;
+    mainRect.y = Y;
 }
 void Sprite::setCropDetails(int cropX,int cropY,int cropW,int cropH)
 {
