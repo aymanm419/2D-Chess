@@ -21,6 +21,8 @@ class GameController
         void MovePiece(Init& game);
         void ChoosePiece(Init& game,Piece* piece);
         bool validMove(int gotoX,int gotoY);
+        bool checkMate(Init& game);
+        void addTilesPerPiece(Init& game,Piece* piece);
         void removePiece(Init& game,Piece* piece);
         void ClearTileEffects();
         bool turn;

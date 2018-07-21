@@ -32,6 +32,8 @@ Piece* GameController::getPieceInRectangle(std::vector<Piece*>& PiecesVector,int
     PosY /= 64;
     for(std::vector<Piece*>::iterator it = PiecesVector.begin();it != PiecesVector.end();it++)
     {
+        if((*it)->isDead)
+            continue;
         Sprite* curSprite = (*it)->getImg();
         std::pair<int,int> PieceRectangle = getRectangle(curSprite->getX(),curSprite->getY());
         if(PieceRectangle.first == PosX && PieceRectangle.second == PosY)
@@ -296,12 +298,8 @@ void GameController::ClearTileEffects()
     }
     TileEffects.clear();
 }
-void GameController::ChoosePiece(Init& game,Piece* piece)
+void GameController::addTilesPerPiece(Init& game,Piece* piece)
 {
-    ClearTileEffects();
-    lastChoosenPiece = piece;
-    if(lastChoosenPiece == NULL)
-        return;
     int curType = piece->PieceType;
     if(curType == 0 || curType == 3)
     {
@@ -316,8 +314,16 @@ void GameController::ChoosePiece(Init& game,Piece* piece)
         AddHorsePositions(game,piece);
     if(curType == 5)
         AddKnightPosition(game,piece);
-
 }
+void GameController::ChoosePiece(Init& game,Piece* piece)
+{
+    ClearTileEffects();
+    lastChoosenPiece = piece;
+    if(lastChoosenPiece == NULL)
+        return;
+    addTilesPerPiece(game,lastChoosenPiece);
+}
+
 bool GameController::validMove(int gotoX,int gotoY)
 {
     for(std::vector<Sprite*>::iterator it = TileEffects.begin();it != TileEffects.end();it++)
@@ -329,16 +335,32 @@ bool GameController::validMove(int gotoX,int gotoY)
 }
 void GameController::removePiece(Init& game,Piece* piece)
 {
+    piece->isDead = true;
+    return;
+}
+bool GameController::checkMate(Init& game)
+{
+    int kingX,kingY;
     for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
     {
-        if(piece == (*it))
+        if((*it)->pieceColor == turn && (*it)->PieceType == 4)
         {
-            (*it)->~Piece();
-            game.getPieces().erase(it);
+            kingX = (*it)->getImg()->getX();
+            kingY = (*it)->getImg()->getY();
             break;
         }
     }
-    return;
+    ClearTileEffects();
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
+    {
+        if((*it)->pieceColor != turn && !(*it)->isDead)
+            addTilesPerPiece(game,(*it));
+    }
+    for(std::vector<Sprite*>::iterator it = TileEffects.begin();it != TileEffects.end();it++)
+    {
+        if(kingX == (*it)->getX() && kingY == (*it)->getY())
+            return true;
+    }
 }
 void GameController::MovePiece(Init& game)
 {
@@ -346,10 +368,27 @@ void GameController::MovePiece(Init& game)
     int MoveY = (game.mouseY/64)*64;
     if(!validMove(MoveX,MoveY))
         return;
+    int lastX = lastChoosenPiece->getImg()->getX();
+    int lastY = lastChoosenPiece->getImg()->getY();
     Piece* curPiece = getPieceInRectangle(game.getPieces(),MoveX,MoveY,true);
     if(curPiece != NULL)
-        removePiece(game,curPiece);
+        curPiece->isDead = true;
     lastChoosenPiece->getImg()->setPosition(MoveX,MoveY);
+    if(checkMate(game))
+    {
+        if(curPiece != NULL)
+            curPiece->isDead = false;
+        lastChoosenPiece->getImg()->setPosition(lastX,lastY);
+        ClearTileEffects();
+        addTilesPerPiece(game,lastChoosenPiece);
+        return;
+    }
+    if(curPiece != NULL)
+    {
+        removePiece(game,curPiece);
+        if(curPiece->PieceType == 4)
+            exit(0);
+    }
     turn = !turn;
     lastChoosenPiece = NULL;
     ClearTileEffects();

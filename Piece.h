@@ -9,7 +9,7 @@ class Piece
         virtual ~Piece();
         Sprite* getImg() {return PieceImg;}
         Sprite* PieceImg;
-        bool pieceColor;
+        bool pieceColor,isDead;
         int PieceType;
     protected:
 

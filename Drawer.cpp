@@ -13,7 +13,10 @@ void Drawer::Draw(Sprite* curSprite,Init& CurGame)
 void Drawer::DrawPieces(std::vector<Piece*>& VectorSprite,Init& curGame)
 {
     for(std::vector<Piece*>::iterator it = VectorSprite.begin();it != VectorSprite.end();it++)
-        Draw((*it)->PieceImg,curGame);
+    {
+        if(!(*it)->isDead)
+             Draw((*it)->PieceImg,curGame);
+    }
 }
 void Drawer::DrawSprites(std::vector<Sprite*>& VectorSprite,Init& curGame)
 {
