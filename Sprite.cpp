@@ -7,6 +7,8 @@ Sprite::Sprite(SDL_Renderer* renderer,char* FileDir,int x,int y,int w,int h)
     curTexture = IMG_LoadTexture(renderer,FileDir);
     SDL_QueryTexture(curTexture,NULL,NULL,&img_width,&img_height);
     setRectDetails(x,y,w,h);
+    XPOS = x / 64;
+    YPOS = y / 64;
     cropRect.x = -1;
 }
 Sprite::Sprite(const Sprite& sp)
@@ -23,16 +25,20 @@ Sprite::~Sprite()
 }
 void Sprite::SetX(int value)
 {
-    mainRect.x = value;
+    XPOS = value;
+    mainRect.x = value*64;
 }
 void Sprite::SetY(int value)
 {
-    mainRect.y = value;
+    YPOS = value;
+    mainRect.y = value*64;
 }
 void Sprite::setPosition(int X,int Y)
 {
-    mainRect.x = X;
-    mainRect.y = Y;
+    XPOS = X;
+    YPOS = Y;
+    mainRect.x = X*64;
+    mainRect.y = Y*64;
 }
 void Sprite::setCropDetails(int cropX,int cropY,int cropW,int cropH)
 {
@@ -43,6 +49,8 @@ void Sprite::setCropDetails(int cropX,int cropY,int cropW,int cropH)
 }
 void Sprite::setRectDetails(int x,int y,int w,int h)
 {
+    XPOS = x/64;
+    YPOS = y/64;
     mainRect.x = x;
     mainRect.y = y;
     mainRect.w = w;

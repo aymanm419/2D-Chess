@@ -2,10 +2,12 @@
 #include "Init.h"
 #include <cmath>
 #include <iostream>
+#include <windows.h>
 GameController::GameController()
 {
-    turn = false;
+    turn = gameDone = false;
     lastChoosenPiece = NULL;
+    lastPiece = NULL;
 }
 bool GameController::isMouseDown(Init& Game)
 {
@@ -22,101 +24,69 @@ void GameController::initalizeClick(Init& Game)
     lastX = Game.mouseX;
     lastY = Game.mouseY;
 }
-std::pair<int,int> GameController::getRectangle(int X,int Y)
-{
-    return std::make_pair(X / 64,Y / 64);
-}
-Piece* GameController::getPieceInRectangle(std::vector<Piece*>& PiecesVector,int PosX,int PosY,bool ignoreColor)
-{
-    PosX /= 64;
-    PosY /= 64;
-    for(std::vector<Piece*>::iterator it = PiecesVector.begin();it != PiecesVector.end();it++)
-    {
-        if((*it)->isDead)
-            continue;
-        Sprite* curSprite = (*it)->getImg();
-        std::pair<int,int> PieceRectangle = getRectangle(curSprite->getX(),curSprite->getY());
-        if(PieceRectangle.first == PosX && PieceRectangle.second == PosY)
-        {
-            if(ignoreColor)
-                return (*it);
-            else if(turn == (*it)->pieceColor)
-                return (*it);
-        }
-    }
-    return NULL;
-}
-void GameController::AddHorizontalTiles(Init& game,Piece* piece)
+void GameController::AddHorizontalTiles(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX + i*64;
-        if(newX > MAX_WINDOWS_WIDTH)
+        int newX = curX + i;
+        if(newX >= 8)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,curY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,curY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,curY));
+        if(game.Board[newX][curY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,curY,64,64));
+            if(game.Board[newX][curY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX - i*64;
+        int newX = curX - i;
         if(newX < 0)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,curY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,curY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,curY));
+        if(game.Board[newX][curY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,curY,64,64));
+            if(game.Board[newX][curY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
 }
-void GameController::AddVerticalPosition(Init& game,Piece* piece)
+void GameController::AddVerticalPosition(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
     for(int i = 1;i <= 8;i++)
     {
-        int newY = curY + i*64;
-        if(newY > MAX_WINDOWS_HEIGHT)
+        int newY = curY + i;
+        if(newY >= 8)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),curX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(curX,newY));
+        if(game.Board[curX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",curX,newY,64,64));
+            if(game.Board[curX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
     for(int i = 1;i <= 8;i++)
     {
-        int newY = curY - i*64;
+        int newY = curY - i;
         if(newY < 0)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),curX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(curX,newY));
+        if(game.Board[curX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",curX,newY,64,64));
+            if(game.Board[curX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
 }
-void GameController::AddKnightPosition(Init& game,Piece* piece)
+void GameController::AddKnightPosition(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
@@ -124,51 +94,55 @@ void GameController::AddKnightPosition(Init& game,Piece* piece)
     {
         for(int i = 1;i <= 2;i++)
         {
-            int newY = curY - i*64;
+            int newY = curY - i;
             if(newY < 0)
                 break;
-            if(i == 2 && curY != 384)
+            if(i == 2 && curY != 6)
                 break;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),curX,newY,true);
-            if(curPiece == NULL)
-                TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX,newY,64,64));
+            SpritesVec.push_back(std::make_pair(curX,newY));
+            if(game.Board[curX][newY])
+            {
+                SpritesVec.pop_back();
+                break;
+            }
         }
         for(int i = -1;i <= 1;i += 2)
         {
-            int newY = curY - 64;
-            int newX = curX + i*64;
-            if(newY < 0 || newX < 0 || newX > MAX_WINDOWS_WIDTH)
+            int newY = curY - 1;
+            int newX = curX + i;
+            if(newY < 0 || newX < 0 || newX >= 8)
                 continue;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-            if(curPiece != NULL && curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+            if(game.Board[newX][newY] && game.Board[newX][newY]->pieceColor != cturn)
+                SpritesVec.push_back(std::make_pair(newX,newY));
         }
     } else
     {
         for(int i = 1;i <= 2;i++)
         {
-            int newY = curY + i*64;
-            if(newY > MAX_WINDOWS_HEIGHT)
+            int newY = curY + i;
+            if(newY >= 8)
                 break;
-            if(i == 2 && curY != 64)
+            if(i == 2 && curY != 1)
                 break;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),curX,newY,true);
-            if(curPiece == NULL)
-                TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX,newY,64,64));
+            SpritesVec.push_back(std::make_pair(curX,newY));
+            if(game.Board[curX][newY])
+            {
+                SpritesVec.pop_back();
+                break;
+            }
         }
         for(int i = -1;i <= 1;i += 2)
         {
-            int newY = curY + 64;
-            int newX = curX + i*64;
-            if(newY > MAX_WINDOWS_HEIGHT || newX < 0 || newX > MAX_WINDOWS_WIDTH)
+            int newY = curY + 1;
+            int newX = curX + i;
+            if(newY >= 8 || newX < 0 || newX >= 8)
                 continue;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-            if(curPiece != NULL && curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+            if(game.Board[newX][newY] && game.Board[newX][newY]->pieceColor != cturn)
+                SpritesVec.push_back(std::make_pair(newX,newY));
         }
     }
 }
-void GameController::AddHorsePositions(Init& game,Piece* piece)
+void GameController::AddHorsePositions(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
@@ -178,23 +152,21 @@ void GameController::AddHorsePositions(Init& game,Piece* piece)
         {
             if(std::abs(i*j) != 2)
                 continue;
-            int newX = curX + j*64;
-            int newY = curY + i*64;
-            if(newY > MAX_WINDOWS_HEIGHT || newY < 0 || newX < 0 || newX > MAX_WINDOWS_WIDTH)
+            int newX = curX + j;
+            int newY = curY + i;
+            if(newY >= 8 || newY < 0 || newX < 0 || newX >= 8)
                 continue;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-            if(curPiece == NULL)
-                TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-            else
+            SpritesVec.push_back(std::make_pair(newX,newY));
+            if(game.Board[newX][newY])
             {
-                if(curPiece->pieceColor != piece->pieceColor)
-                    TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+                if(game.Board[newX][newY]->pieceColor == cturn)
+                    SpritesVec.pop_back();
                 continue;
             }
         }
     }
 }
-void GameController::AddAroundKingTiles(Init& game,Piece* piece)
+void GameController::AddAroundKingTiles(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
@@ -202,126 +174,135 @@ void GameController::AddAroundKingTiles(Init& game,Piece* piece)
     {
         for(int j = -1;j <= 1;j++)
         {
-            int newX = curX + i*64;
-            int newY = curY + j*64;
-            if(newY > MAX_WINDOWS_HEIGHT || newY < 0 || newX < 0 || newX > MAX_WINDOWS_WIDTH)
+            int newX = curX + i;
+            int newY = curY + j;
+            if(newY >= 8 || newY < 0 || newX < 0 || newX >= 8)
                 continue;
             if(newX == curX && newY == curY)
                 continue;
-            Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-            if(curPiece == NULL)
-                TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-            else
+            SpritesVec.push_back(std::make_pair(newX,newY));
+            if(game.Board[newX][newY])
             {
-                if(curPiece->pieceColor != piece->pieceColor)
-                    TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+                if(game.Board[newX][newY]->pieceColor == cturn)
+                    SpritesVec.pop_back();
                 continue;
             }
         }
     }
 }
-void GameController::AddDiagonalPositions(Init& game,Piece* piece)
+void GameController::AddDiagonalPositions(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX + i*64;
-        int newY = curY + i*64;
-        if(newY > MAX_WINDOWS_HEIGHT || newX > MAX_WINDOWS_WIDTH)
+        int newX = curX + i;
+        int newY = curY + i;
+        if(newY >= 8 || newX >= 8)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,newY));
+        if(game.Board[newX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY ,64,64));
+            if(game.Board[newX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX - i*64;
-        int newY = curY - i*64;
+        int newX = curX - i;
+        int newY = curY - i;
         if(newY < 0 || newX < 0)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,newY));
+        if(game.Board[newX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+            if(game.Board[newX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX + i*64;
-        int newY = curY - i*64;
-        if(newY < 0 || newX > MAX_WINDOWS_WIDTH)
+        int newX = curX + i;
+        int newY = curY - i;
+        if(newY < 0 || newX >= 8)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,newY));
+        if(game.Board[newX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+            if(game.Board[newX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
     for(int i = 1;i <= 8;i++)
     {
-        int newX = curX - i*64;
-        int newY = curY + i*64;
-        if(newY > MAX_WINDOWS_WIDTH || newX < 0)
+        int newX = curX - i;
+        int newY = curY + i;
+        if(newY >= 8 || newX < 0)
             break;
-        Piece* curPiece = getPieceInRectangle(game.getPieces(),newX,newY,true);
-        if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",newX,newY,64,64));
-        else
+        SpritesVec.push_back(std::make_pair(newX,newY));
+        if(game.Board[newX][newY])
         {
-            if(curPiece->pieceColor != piece->pieceColor)
-                TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",newX,newY,64,64));
+            if(game.Board[newX][newY]->pieceColor == cturn)
+                SpritesVec.pop_back();
             break;
         }
     }
 }
-void GameController::ClearTileEffects()
+void GameController::ClearTileEffects(std::vector<Sprite*>& SpritesVec)
 {
-    if(TileEffects.size() > 0)
+    if(SpritesVec.size() > 0)
     {
-        for(std::vector<Sprite*>::iterator it = TileEffects.begin();it != TileEffects.end();it++)
+        for(std::vector<Sprite*>::iterator it = SpritesVec.begin();it != SpritesVec.end();it++)
             delete (*it);
     }
-    TileEffects.clear();
+    SpritesVec.clear();
 }
-void GameController::addTilesPerPiece(Init& game,Piece* piece)
+void GameController::addTilesPerPiece(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec,bool cturn)
 {
     int curType = piece->PieceType;
     if(curType == 0 || curType == 3)
     {
-        AddHorizontalTiles(game,piece);
-        AddVerticalPosition(game,piece);
+        AddHorizontalTiles(game,piece,SpritesVec,cturn);
+        AddVerticalPosition(game,piece,SpritesVec,cturn);
     }
     if(curType == 3 || curType == 2)
-        AddDiagonalPositions(game,piece);
+        AddDiagonalPositions(game,piece,SpritesVec,cturn);
     if(curType == 4)
-        AddAroundKingTiles(game,piece);
+        AddAroundKingTiles(game,piece,SpritesVec,cturn);
     if(curType == 1)
-        AddHorsePositions(game,piece);
+        AddHorsePositions(game,piece,SpritesVec,cturn);
     if(curType == 5)
-        AddKnightPosition(game,piece);
+        AddKnightPosition(game,piece,SpritesVec,cturn);
+}
+void GameController::fillTileEffects(Init& game,std::vector<std::pair<int,int> >& PositionVector)
+{
+    for(std::vector<std::pair<int,int> >::iterator it = PositionVector.begin();it != PositionVector.end();it++)
+    {
+        int curX = (*it).first;
+        int curY = (*it).second;
+        Piece* curPiece = game.Board[curX][curY];
+        if(curPiece == NULL)
+            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX*64,curY*64,64,64));
+        else
+            TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",curX*64,curY*64,64,64));
+    }
 }
 void GameController::ChoosePiece(Init& game,Piece* piece)
 {
-    ClearTileEffects();
+    if(piece == NULL)
+        return;
+    if(piece->pieceColor != turn)
+        return;
+    ClearTileEffects(TileEffects);
     lastChoosenPiece = piece;
     if(lastChoosenPiece == NULL)
         return;
-    addTilesPerPiece(game,lastChoosenPiece);
+    std::vector<std::pair<int,int> > positionVector;
+    addTilesPerPiece(game,lastChoosenPiece,positionVector,turn);
+    fillTileEffects(game,positionVector);
 }
 
 bool GameController::validMove(int gotoX,int gotoY)
@@ -350,47 +331,102 @@ bool GameController::checkMate(Init& game)
             break;
         }
     }
-    ClearTileEffects();
+    std::vector<std::pair<int,int> > PossiblePositions;
     for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
     {
         if((*it)->pieceColor != turn && !(*it)->isDead)
-            addTilesPerPiece(game,(*it));
+            addTilesPerPiece(game,(*it),PossiblePositions,turn);
     }
-    for(std::vector<Sprite*>::iterator it = TileEffects.begin();it != TileEffects.end();it++)
+    for(std::vector<std::pair<int,int> >::iterator it = PossiblePositions.begin();it != PossiblePositions.end();it++)
     {
-        if(kingX == (*it)->getX() && kingY == (*it)->getY())
+        if(kingX == (*it).first && kingY == (*it).second)
             return true;
     }
+    return false;
+}
+int GameController::getBoardScore(Init& game)
+{
+    int delta = 0;
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
+    {
+        if((*it)->pieceColor)
+            delta += (*it)->getPieceValue() * ((*it)->isDead ? -1 : 1);
+        else
+            delta += (*it)->getPieceValue() * (!(*it)->isDead ? -1 : 1);
+    }
+    return delta;
+}
+int GameController::getNextMove(Init& game,int depth,int alpha,int beta,bool curTurn)
+{
+    if(depth == 4)
+        return getBoardScore(game);
+    int BestCur = (curTurn ? -1e5 : 1e5);
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
+    {
+        if((*it)->isDead || (*it)->pieceColor != curTurn)
+            continue;
+        std::vector<std::pair<int,int> > availablePositions;
+        addTilesPerPiece(game,*it,availablePositions,curTurn);
+        int oldX = (*it)->getImg()->getX();
+        int oldY = (*it)->getImg()->getY();
+        for(int i = 0;i < availablePositions.size();i++)
+        {
+            int newX = availablePositions[i].first;
+            int newY = availablePositions[i].second;
+           //std::cout << newX << " " << newY << std::endl;
+            Piece* attackedPiece = game.Board[newX][newY];
+            if(attackedPiece)
+                attackedPiece->isDead = true;
+            game.Board[newX][newY] = *it;
+            game.Board[oldX][oldY] = NULL;
+            int val = getNextMove(game,depth + 1,alpha,beta,!curTurn);
+            if(curTurn)
+            {
+                alpha = std::max(alpha,val);
+                if(val >= BestCur)
+                {
+                    BestCur = val;
+                    if(depth == 0){
+                    lastPiece = *it;
+                    AIX = newX;
+                    AIY = newY;
+                    }
+                }
+            } else
+            {
+                BestCur = std::min(BestCur,val);
+                beta = std::min(beta,val);
+            }
+            if(attackedPiece)
+                attackedPiece->isDead = false;
+            game.Board[newX][newY] = attackedPiece;
+            game.Board[oldX][oldY] = *it;
+        }
+    }
+    return BestCur;
 }
 void GameController::MovePiece(Init& game)
 {
-    int MoveX = (game.mouseX/64)*64;
-    int MoveY = (game.mouseY/64)*64;
-    if(!validMove(MoveX,MoveY))
+    int MoveX = (game.mouseX/64);
+    int MoveY = (game.mouseY/64);
+    if(!validMove(MoveX,MoveY) && !turn)
         return;
     int lastX = lastChoosenPiece->getImg()->getX();
     int lastY = lastChoosenPiece->getImg()->getY();
-    Piece* curPiece = getPieceInRectangle(game.getPieces(),MoveX,MoveY,true);
+    Piece* curPiece = game.Board[MoveX][MoveY];
     if(curPiece != NULL)
         curPiece->isDead = true;
     lastChoosenPiece->getImg()->setPosition(MoveX,MoveY);
-    if(checkMate(game))
-    {
-        if(curPiece != NULL)
-            curPiece->isDead = false;
-        lastChoosenPiece->getImg()->setPosition(lastX,lastY);
-        ClearTileEffects();
-        addTilesPerPiece(game,lastChoosenPiece);
-        return;
-    }
     if(curPiece != NULL)
     {
         removePiece(game,curPiece);
         if(curPiece->PieceType == 4)
-            exit(0);
+            gameDone = true;
     }
     turn = !turn;
+    game.Board[MoveX][MoveY] = game.Board[lastX][lastY];
+    game.Board[lastX][lastY] = NULL;
     lastChoosenPiece = NULL;
-    ClearTileEffects();
+    ClearTileEffects(TileEffects);
 }
 

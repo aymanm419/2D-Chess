@@ -8,6 +8,7 @@ class Piece
         Piece(bool piece_Color,int Piece_Type);
         virtual ~Piece();
         Sprite* getImg() {return PieceImg;}
+        int getPieceValue();
         Sprite* PieceImg;
         bool pieceColor,isDead;
         int PieceType;

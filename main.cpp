@@ -7,10 +7,12 @@
 #include "Drawer.h"
 #include <vector>
 #include "GameController.h"
+
 char* backgroundImg = "chessBack.bmp";
 Sprite* curBoard;
 Sprite* SpriteTile;
 Piece* TemporaryChoosen;
+
 int main( int argc, char * argv[] )
 {
     Drawer GameDrawer;
@@ -32,23 +34,42 @@ int main( int argc, char * argv[] )
         if(GameHandler.TileEffects.size() > 0)
             GameDrawer.DrawSprites(GameHandler.TileEffects,Game);
         GameDrawer.DrawPieces(Game.getPieces(),Game);
-        if(GameHandler.isMouseDown(Game))
+        if(GameHandler.gameDone)
         {
-            SDL_GetMouseState(&Game.mouseX,&Game.mouseY);
-            if(GameHandler.isValidClick(Game))
+            Game.End();
+            continue;
+        }
+        if(!GameHandler.turn)
+        {
+            if(GameHandler.isMouseDown(Game))
             {
-                GameHandler.initalizeClick(Game);
-                TemporaryChoosen = GameHandler.getPieceInRectangle(Game.getPieces(),Game.mouseX,Game.mouseY);
-                if(GameHandler.lastChoosenPiece == NULL)
-                    GameHandler.ChoosePiece(Game,TemporaryChoosen);
-                else
+                SDL_GetMouseState(&Game.mouseX,&Game.mouseY);
+                if(GameHandler.isValidClick(Game))
                 {
-                    if(TemporaryChoosen != NULL)
+                    GameHandler.initalizeClick(Game);
+                    TemporaryChoosen = Game.Board[GameHandler.lastX/64][GameHandler.lastY/64];
+                    if(TemporaryChoosen && TemporaryChoosen->pieceColor != GameHandler.turn)
+                        TemporaryChoosen = NULL;
+                    if(GameHandler.lastChoosenPiece == NULL)
                         GameHandler.ChoosePiece(Game,TemporaryChoosen);
                     else
-                        GameHandler.MovePiece(Game);
+                    {
+                        if(TemporaryChoosen != NULL)
+                            GameHandler.ChoosePiece(Game,TemporaryChoosen);
+                        else
+                            GameHandler.MovePiece(Game);
+                    }
                 }
             }
+        } else
+        {
+            std::cout << GameHandler.getNextMove(Game,0,-INF,INF,true) << std::endl;
+            Game.mouseX = GameHandler.AIX*64;
+            Game.mouseY = GameHandler.AIY*64;
+            GameHandler.lastChoosenPiece = GameHandler.lastPiece;
+            GameHandler.MovePiece(Game);
+           // GameHandler.lastPiece->getImg()->setPosition(Game.mouseX,Game.mouseY);
+            //GameHandler.turn = !GameHandler.turn;
         }
         Game.End();
     }

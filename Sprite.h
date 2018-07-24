@@ -15,8 +15,8 @@ class Sprite
         void SetX(int value);
         void SetY(int value);
         void setPosition(int X,int Y);
-        int getX() {return mainRect.x;}
-        int getY() {return mainRect.y;}
+        int getX() {return XPOS;}
+        int getY() {return YPOS;}
         void setCropDetails(int cropX,int cropY,int cropW,int cropH);
         void setRectDetails(int x,int y,int w,int h);
         SDL_Rect getMainRect() {return mainRect;}
@@ -29,6 +29,7 @@ class Sprite
         SDL_Texture* curTexture;
         SDL_Rect mainRect;
         SDL_Rect cropRect;
+        int XPOS,YPOS;
 };
 
 #endif // Sprite_H

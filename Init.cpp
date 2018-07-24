@@ -1,5 +1,4 @@
 #include "Init.h"
-
 Init::Init()
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -11,6 +10,9 @@ Init::Init()
     if(!renderer)
         quit = true;
     mainEvent = new SDL_Event();
+    for(int i = 0;i < 8;i++)
+        for(int j = 0;j < 8;j++)
+            Board[i][j] = NULL;
 }
 
 Init::~Init()
@@ -44,10 +46,11 @@ void Init::InitializeBlack()
     for(int i = 2;i <= 4;i++)
     {
         Pi = new Sprite(renderer,ChessImg,0,0,0,0);
-        Pi->setRectDetails(SquareWidth*(i-2) ,0,SquareWidth,SquareHeight);
+        Pi->setRectDetails(SquareWidth*(i-2),0,SquareWidth,SquareHeight);
         Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(true,i-2);
         temporaryPiece->PieceImg = Pi;
+        Board[(i-2)][0] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 1;i >= 0;i--)
@@ -57,6 +60,7 @@ void Init::InitializeBlack()
         Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(true,4-i);
         temporaryPiece->PieceImg = Pi;
+        Board[(4-i)][0] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 4;i >= 2;i--)
@@ -66,6 +70,7 @@ void Init::InitializeBlack()
         Pi->setCropDetails(SquareWidth*i,0,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(true,i-2);
         temporaryPiece->PieceImg = Pi;
+        Board[(9-i)][0] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 0;i <= 7;i++)
@@ -75,6 +80,7 @@ void Init::InitializeBlack()
         Pi->setCropDetails(SquareWidth*5,0,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(true,5);
         temporaryPiece->PieceImg = Pi;
+        Board[i][1] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
 }
@@ -89,6 +95,7 @@ void Init::InitializeWhite()
         Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(false,i-2);
         temporaryPiece->PieceImg = Pi;
+        Board[(i-2)][7] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 1;i >= 0;i--)
@@ -98,6 +105,7 @@ void Init::InitializeWhite()
         Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(false,4-i);
         temporaryPiece->PieceImg = Pi;
+        Board[(4-i)][7] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 4;i >= 2;i--)
@@ -107,6 +115,7 @@ void Init::InitializeWhite()
         Pi->setCropDetails(SquareWidth*i,SquareHeight,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(false,i-2);
         temporaryPiece->PieceImg = Pi;
+        Board[(9-i)][7] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
     for(int i = 0;i <= 7;i++)
@@ -116,6 +125,7 @@ void Init::InitializeWhite()
         Pi->setCropDetails(SquareWidth*5,SquareHeight,SquareWidth,SquareWidth);
         temporaryPiece = new Piece(false,5);
         temporaryPiece->PieceImg = Pi;
+        Board[i][6] = temporaryPiece;
         GamePieces.push_back(temporaryPiece);
     }
 }

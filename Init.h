@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 #include "Sprite.h"
 #include <vector>
+#define INF 1000000
 #include "Piece.h"
 class Init
 {
@@ -21,6 +22,7 @@ class Init
         void InitializeWhite();
         std::vector<Piece*>& getPieces() {return GamePieces;}
         int32_t mouseX,mouseY;
+        Piece* Board[8][8];
     protected:
 
     private:
@@ -28,6 +30,7 @@ class Init
         int SquareWidth = 64;
         int SquareHeight= 64;
         std::vector<Piece*> GamePieces;
+
 };
 
 #endif // INIT_H
