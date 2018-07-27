@@ -1,1 +1,1 @@
-A 2D-Chess Game Based on AI(Still Not Complete!) Made with SDL2..
+A 2D-Chess Game Based on AI(Almost Complete) Made with SDL2..
