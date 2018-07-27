@@ -63,13 +63,10 @@ int main( int argc, char * argv[] )
             }
         } else
         {
-            std::cout << GameHandler.getNextMove(Game,0,-INF,INF,true) << std::endl;
             Game.mouseX = GameHandler.AIX*64;
             Game.mouseY = GameHandler.AIY*64;
             GameHandler.lastChoosenPiece = GameHandler.lastPiece;
             GameHandler.MovePiece(Game);
-           // GameHandler.lastPiece->getImg()->setPosition(Game.mouseX,Game.mouseY);
-            //GameHandler.turn = !GameHandler.turn;
         }
         Game.End();
     }

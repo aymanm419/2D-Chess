@@ -335,7 +335,7 @@ bool GameController::checkMate(Init& game)
     for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
     {
         if((*it)->pieceColor != turn && !(*it)->isDead)
-            addTilesPerPiece(game,(*it),PossiblePositions,turn);
+            addTilesPerPiece(game,(*it),PossiblePositions,!turn);
     }
     for(std::vector<std::pair<int,int> >::iterator it = PossiblePositions.begin();it != PossiblePositions.end();it++)
     {
@@ -386,10 +386,11 @@ int GameController::getNextMove(Init& game,int depth,int alpha,int beta,bool cur
                 if(val >= BestCur)
                 {
                     BestCur = val;
-                    if(depth == 0){
-                    lastPiece = *it;
-                    AIX = newX;
-                    AIY = newY;
+                    if(depth == 0)
+                    {
+                        lastPiece = *it;
+                        AIX = newX;
+                        AIY = newY;
                     }
                 }
             } else
@@ -417,6 +418,13 @@ void GameController::MovePiece(Init& game)
     if(curPiece != NULL)
         curPiece->isDead = true;
     lastChoosenPiece->getImg()->setPosition(MoveX,MoveY);
+    if(checkMate(game) && turn)
+    {
+        if(curPiece != NULL)
+            curPiece->isDead = false;
+        lastChoosenPiece->getImg()->setPosition(lastX,lastY);
+        return;
+    }
     if(curPiece != NULL)
     {
         removePiece(game,curPiece);
