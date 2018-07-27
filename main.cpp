@@ -63,6 +63,7 @@ int main( int argc, char * argv[] )
             }
         } else
         {
+            GameHandler.getNextMove(Game,0,0,0,true);
             Game.mouseX = GameHandler.AIX*64;
             Game.mouseY = GameHandler.AIY*64;
             GameHandler.lastChoosenPiece = GameHandler.lastPiece;
