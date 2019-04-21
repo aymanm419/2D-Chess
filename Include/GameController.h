@@ -3,6 +3,24 @@
 #include "Init.h"
 #include "Piece.h"
 #include "Drawer.h"
+struct operation
+{
+    Piece* attacker = NULL;
+    Piece* attacked = NULL;
+    int fromX,fromY;
+    int toX,toY;
+    bool promotion = false;
+    void setOp(Piece* f1,Piece* f2,int fx,int fy,int tx,int ty,bool p)
+    {
+        attacker = f1;
+        attacked = f2;
+        fromX = fx;
+        fromY = fy;
+        toX = tx;
+        toY = ty;
+        promotion = p;
+    }
+};
 class GameController
 {
     public:
@@ -20,20 +38,29 @@ class GameController
         void MovePiece(Init& game);
         void ChoosePiece(Init& game,Piece* piece);
         bool validMove(int gotoX,int gotoY);
-        bool checkMate(Init& game);
+        bool check(Init& game,int kingColor);
         void addTilesPerPiece(Init& game,Piece* piece,std::vector<std::pair<int,int> >& SpritesVec);
-        void removePiece(Init& game,Piece* piece);
+        void killPiece(Init& game,Piece* piece);
+        void unkillPiece(Init& game,Piece* piece,int oldX,int oldY);
         void ClearTileEffects(std::vector<Sprite*>& SpritesVec);
-        int getBoardScore(Init& game);
+        int getBoardScore(int oldX,int oldY,int newX,int newY);
         void fillTileEffects(Init& game,std::vector<std::pair<int,int> >& PositionVector);
-        int getNextMove(Init& game,int depth,int alpha,int beta,bool curTurn,int kingDead);
+        int getNextMove(Init& game,int depth,bool curTurn);
+        bool checkMate(Init& game,int kingColor);
+        bool staleMate(Init& game,int kingColor);
+        bool promotePiece(Init& game,Piece* piece,SDL_Keycode buttonClicked);
+        void clearOperations(std::vector<operation*>& op);
+        void undo(Init& game);
+        void redo(Init& game);
         bool turn,gameDone;
         Piece* lastChoosenPiece;
         Piece* lastPiece;
-        int AIX,AIY;
+        int AIX,AIY,alivePieces;
         std::vector<Sprite*> TileEffects;
+        std::vector<operation*> undoMove,redoMove;
         int32_t lastX,lastY;
         int32_t invalidMoveCounter;
+        int isAI;
     protected:
 
     private:

@@ -4,8 +4,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <vector>
-#define MAX_WINDOWS_WIDTH 512
-#define MAX_WINDOWS_HEIGHT 512
+
 class Sprite
 {
     public:

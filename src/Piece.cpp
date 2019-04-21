@@ -1,4 +1,4 @@
-#include "Piece.h"
+#include "../Include/Piece.h"
 
 Piece::Piece(bool piece_Color,int Piece_Type)
 {
@@ -14,15 +14,15 @@ Piece::~Piece()
 
 int Piece::getPieceValue()
 {
-    if(PieceType == 0)
+    if(PieceType == PIECE_TYPE::ROOK)
         return 5;
-    if(PieceType == 1)
+    if(PieceType == PIECE_TYPE::KNIGHT)
         return 3;
-    if(PieceType == 2)
+    if(PieceType == PIECE_TYPE::BISHOP)
         return 3;
-    if(PieceType == 3)
+    if(PieceType == PIECE_TYPE::QUEEN)
         return 9;
-    if(PieceType == 4)
-        return 3000;
+    if(PieceType == PIECE_TYPE::KING)
+        return 50;
     return 1;
 }

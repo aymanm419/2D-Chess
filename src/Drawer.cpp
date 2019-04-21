@@ -1,4 +1,4 @@
-#include "Drawer.h"
+#include "../Include/Drawer.h"
 #include <iostream>
 
 void Drawer::Draw(Sprite* curSprite,Init& CurGame)
@@ -13,10 +13,7 @@ void Drawer::Draw(Sprite* curSprite,Init& CurGame)
 void Drawer::DrawPieces(std::vector<Piece*>& VectorSprite,Init& curGame)
 {
     for(std::vector<Piece*>::iterator it = VectorSprite.begin();it != VectorSprite.end();it++)
-    {
-        if(!(*it)->isDead)
-             Draw((*it)->PieceImg,curGame);
-    }
+        Draw((*it)->PieceImg,curGame);
 }
 void Drawer::DrawSprites(std::vector<Sprite*>& VectorSprite,Init& curGame)
 {

@@ -1,14 +1,17 @@
-#include "GameController.h"
-#include "Init.h"
+#include "../Include/GameController.h"
+#include "../Include/Init.h"
 #include <cmath>
 #include <iostream>
 #include <windows.h>
 GameController::GameController()
 {
-    turn = gameDone = false;
+    gameDone = false;
+    turn = PIECE_COLOR::WHITE;
     lastChoosenPiece = NULL;
     lastPiece = NULL;
     invalidMoveCounter = 0;
+    alivePieces = 32;
+    isAI = -1;
 }
 bool GameController::isMouseDown(Init& Game)
 {
@@ -91,7 +94,7 @@ void GameController::AddKnightPosition(Init& game,Piece* piece,std::vector<std::
 {
     int curX = piece->getImg()->getX();
     int curY = piece->getImg()->getY();
-    if(!piece->pieceColor)
+    if(piece->pieceColor == PIECE_COLOR::WHITE)
     {
         for(int i = 1;i <= 2;i++)
         {
@@ -286,10 +289,16 @@ void GameController::fillTileEffects(Init& game,std::vector<std::pair<int,int> >
         int curY = (*it).second;
         Piece* curPiece = game.Board[curX][curY];
         if(curPiece == NULL)
-            TileEffects.push_back(new Sprite(game.renderer,"AllowedSprite.png",curX*64,curY*64,64,64));
+            TileEffects.push_back(new Sprite(game.renderer,"./Sprites/AllowedSprite.png",curX*64,curY*64,64,64));
         else
-            TileEffects.push_back(new Sprite(game.renderer,"AttackSprite.png",curX*64,curY*64,64,64));
+            TileEffects.push_back(new Sprite(game.renderer,"./Sprites/AttackSprite.png",curX*64,curY*64,64,64));
     }
+}
+void GameController::clearOperations(std::vector<operation*>& op)
+{
+    for(std::vector<operation*>::iterator it = op.begin();it != op.end();it++)
+        delete (*it);
+    op.clear();
 }
 void GameController::ChoosePiece(Init& game,Piece* piece)
 {
@@ -315,17 +324,38 @@ bool GameController::validMove(int gotoX,int gotoY)
     }
     return false;
 }
-void GameController::removePiece(Init& game,Piece* piece)
+void GameController::killPiece(Init& game,Piece* piece)
 {
     piece->isDead = true;
-    return;
+    alivePieces--;
+    if(piece->pieceColor == PIECE_COLOR::BLACK)
+    {
+        piece->getImg()->setPosition(8 + (game.deadBlack%4),game.deadBlack/4);
+        game.deadBlack++;
+    } else {
+        piece->getImg()->setPosition(8 + (game.deadWhite%4),7-game.deadWhite/4);
+        game.deadWhite++;
+    }
 }
-bool GameController::checkMate(Init& game)
+void GameController::unkillPiece(Init& game,Piece* piece,int oldX,int oldY)
+{
+    piece->isDead = false;
+    alivePieces++;
+    if(piece->pieceColor == PIECE_COLOR::BLACK)
+    {
+        piece->getImg()->setPosition(oldX,oldY);
+        game.deadBlack--;
+    } else {
+        piece->getImg()->setPosition(oldX,oldY);
+        game.deadWhite--;
+    }
+}
+bool GameController::check(Init& game,int kingColor)
 {
     int kingX,kingY;
     for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
     {
-        if((*it)->pieceColor == turn && (*it)->PieceType == 4)
+        if((*it)->pieceColor == kingColor && (*it)->PieceType == PIECE_TYPE::KING)
         {
             kingX = (*it)->getImg()->getX();
             kingY = (*it)->getImg()->getY();
@@ -335,7 +365,7 @@ bool GameController::checkMate(Init& game)
     std::vector<std::pair<int,int> > PossiblePositions;
     for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
     {
-        if((*it)->pieceColor != turn && !(*it)->isDead)
+        if((*it)->pieceColor != kingColor && !(*it)->isDead)
             addTilesPerPiece(game,(*it),PossiblePositions);
     }
     for(std::vector<std::pair<int,int> >::iterator it = PossiblePositions.begin();it != PossiblePositions.end();it++)
@@ -345,119 +375,322 @@ bool GameController::checkMate(Init& game)
     }
     return false;
 }
-int GameController::getBoardScore(Init& game)
+bool GameController::checkMate(Init& game,int kingColor)
 {
-    int delta = 0;
-    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
+    if(!check(game,kingColor))
+        return false;
+    bool ret = true;
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end() && ret;it++)
     {
-        if((*it)->pieceColor)
-            delta += (*it)->getPieceValue() * ((*it)->isDead ? -1 : 1);
-        else
-            delta += (*it)->getPieceValue() * (!(*it)->isDead ? -1 : 1);
-    }
-    return delta;
-}
-//1 for Player King,2 for AI King
-int GameController::getNextMove(Init& game,int depth,int alpha,int beta,bool curTurn,int kingDead)
-{
-    if(depth == 4)
-        return getBoardScore(game) - depth;
-    int BestCur = (curTurn ? -3000 : 3000);
-    bool bk = false;
-    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
-    {
-        if((*it)->isDead || (*it)->pieceColor != curTurn)
-            continue;
-        if(bk)
-            break;
-        std::vector<std::pair<int,int> > availablePositions;
-        addTilesPerPiece(game,*it,availablePositions);
-        int oldX = (*it)->getImg()->getX();
-        int oldY = (*it)->getImg()->getY();
-        for(int i = 0;i < availablePositions.size();i++)
+        if((*it)->pieceColor == kingColor && !(*it)->isDead)
         {
-            if(bk)
-                break;
-            int newX = availablePositions[i].first;
-            int newY = availablePositions[i].second;
-            Piece* attackedPiece = game.Board[newX][newY];
-            if(attackedPiece)
+            std::vector<std::pair<int,int> > PossiblePositions;
+            addTilesPerPiece(game,(*it),PossiblePositions);
+            for(int j = 0;j < PossiblePositions.size() && ret;j++)
             {
-                attackedPiece->isDead = true;
-                if(attackedPiece->getPieceValue() == 3000)
-                    kingDead = (curTurn ? 1 : 2);
+                int oldX = (*it)->getImg()->getX();
+                int oldY = (*it)->getImg()->getY();
+                Piece* tmp = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+                game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = (*it);
+                game.Board[oldX][oldY] = NULL;
+                (*it)->getImg()->setPosition(PossiblePositions[j].first,PossiblePositions[j].second);
+                if(tmp)
+                    tmp->isDead = true;
+                if(!check(game,kingColor))
+                    ret = false;
+                game.Board[oldX][oldY] = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+                game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = tmp;
+                (*it)->getImg()->setPosition(oldX,oldY);
+                if(tmp)
+                    tmp->isDead = false;
             }
-            game.Board[newX][newY] = *it;
-            game.Board[oldX][oldY] = NULL;
-            (*it)->getImg()->setPosition(newX,newY);
-            int val = getNextMove(game,depth + 1,alpha,beta,!curTurn,kingDead);
-            if(curTurn)
-            {
-                alpha = std::max(alpha,val);
-                if(val >= BestCur)
-                {
-                    BestCur = val;
-                    if(depth == 0)
-                    {
-                        lastPiece = *it;
-                        AIX = newX;
-                        AIY = newY;
-                    }
-                }
-                if(alpha > beta && depth != 0)
-                    bk = true;
-            } else
-            {
-                BestCur = std::min(BestCur,val);
-                beta = std::min(beta,val);
-                if(alpha > beta && depth != 0)
-                    bk = true;
-            }
-            if(attackedPiece)
-            {
-                attackedPiece->isDead = false;
-                if(attackedPiece->getPieceValue() == 3000)
-                    kingDead = 0;
-            }
-            (*it)->getImg()->setPosition(oldX,oldY);
-            game.Board[newX][newY] = attackedPiece;
-            game.Board[oldX][oldY] = *it;
         }
     }
-    return BestCur;
+    return ret;
+}
+bool GameController::staleMate(Init& game,int kingColor)
+{
+    bool ret = true;
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end() && ret;it++)
+    {
+        if((*it)->pieceColor == kingColor && !(*it)->isDead)
+        {
+            std::vector<std::pair<int,int> > PossiblePositions;
+            addTilesPerPiece(game,(*it),PossiblePositions);
+            for(int j = 0;j < PossiblePositions.size() && ret;j++)
+            {
+                int oldX = (*it)->getImg()->getX();
+                int oldY = (*it)->getImg()->getY();
+                Piece* tmp = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+                game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = (*it);
+                game.Board[oldX][oldY] = NULL;
+                (*it)->getImg()->setPosition(PossiblePositions[j].first,PossiblePositions[j].second);
+                if(tmp)
+                    tmp->isDead = true;
+                if(!check(game,kingColor))
+                    ret = false;
+                game.Board[oldX][oldY] = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+                game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = tmp;
+                (*it)->getImg()->setPosition(oldX,oldY);
+                if(tmp)
+                    tmp->isDead = false;
+            }
+        }
+    }
+    return ret;
+}
+bool GameController::promotePiece(Init& game,Piece* piece,SDL_Keycode buttonClicked)
+{
+    operation* tmp;
+    if(buttonClicked == SDLK_0)
+    {
+        piece->getImg()->setCropDetails(64*2,piece->pieceColor*64,64,64);
+        piece->PieceType = PIECE_TYPE::ROOK;
+        tmp = new operation();
+        tmp->setOp(piece,NULL,PIECE_TYPE::ROOK,piece->pieceColor,-1,-1,true);
+        undoMove.push_back(tmp);
+        return true;
+    }
+     if(buttonClicked == SDLK_1)
+    {
+        piece->getImg()->setCropDetails(64*3,piece->pieceColor*64,64,64);
+        piece->PieceType = PIECE_TYPE::KNIGHT;
+        tmp = new operation();
+        tmp->setOp(piece,NULL,PIECE_TYPE::KNIGHT,piece->pieceColor,-1,-1,true);
+        undoMove.push_back(tmp);
+        return true;
+    }
+     if(buttonClicked == SDLK_2)
+    {
+        piece->getImg()->setCropDetails(64*4,piece->pieceColor*64,64,64);
+        piece->PieceType = PIECE_TYPE::BISHOP;
+        tmp = new operation();
+        tmp->setOp(piece,NULL,PIECE_TYPE::BISHOP,piece->pieceColor,-1,-1,true);
+        undoMove.push_back(tmp);
+        return true;
+    }
+    if(buttonClicked == SDLK_3)
+    {
+        piece->getImg()->setCropDetails(64,piece->pieceColor*64,64,64);
+        piece->PieceType = PIECE_TYPE::QUEEN;
+        tmp = new operation();
+        tmp->setOp(piece,NULL,PIECE_TYPE::QUEEN,piece->pieceColor,-1,-1,true);
+        undoMove.push_back(tmp);
+        return true;
+    }
+    return false;
+}
+int GameController::getBoardScore(int oldX,int oldY,int newX,int newY)
+{
+    int z = 0;
+    if(newY >= 2 && newY <= 5)
+        z++;
+    if(newY < 2 || newY > 5)
+        z--;
+    return z;
+}
+//1 for Player King,2 for AI King
+int GameController::getNextMove(Init& game,int depth,bool curTurn)
+{
+    if(depth == 4)
+        return 0;
+    int bestValue = (curTurn == PIECE_COLOR::WHITE ? -INT_MAX : INT_MAX);
+    for(std::vector<Piece*>::iterator it = game.getPieces().begin();it != game.getPieces().end();it++)
+    {
+        Piece *tmpPiece = (*it);
+        if(tmpPiece->isDead || tmpPiece->getImg()->getX() >= 8 || curTurn != tmpPiece->pieceColor)
+            continue;
+        std::vector<std::pair<int,int> > PossiblePositions;
+        addTilesPerPiece(game,tmpPiece,PossiblePositions);
+        int oldX = tmpPiece->getImg()->getX();
+        int oldY = tmpPiece->getImg()->getY();
+        for(int j = 0;j < PossiblePositions.size();j++)
+        {
+            int playValue = 0;
+            Piece* target = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+            game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = (*it);
+            game.Board[oldX][oldY] = NULL;
+            tmpPiece->getImg()->setPosition(PossiblePositions[j].first,PossiblePositions[j].second);
+            if(target)
+            {
+                target->isDead = true;
+                if(PIECE_COLOR::BLACK == curTurn)
+                    playValue -= target->getPieceValue();
+                else
+                    playValue += target->getPieceValue();
+            }
+            bool promoted = false;
+            if(PossiblePositions[j].first == 7 && curTurn == PIECE_COLOR::WHITE && tmpPiece->PieceType == PIECE_TYPE::PAWN)
+                tmpPiece->PieceType = PIECE_TYPE::QUEEN,promoted = true,playValue += 8;
+            if(PossiblePositions[j].first == 0 && curTurn == PIECE_COLOR::BLACK && tmpPiece->pieceColor == PIECE_TYPE::PAWN)
+                tmpPiece->PieceType = PIECE_TYPE::QUEEN,promoted = true,playValue -= 8;
+            if(curTurn == PIECE_COLOR::WHITE)
+            {
+                playValue += getNextMove(game,depth + 1,1 - curTurn);
+                if(playValue >= bestValue && depth == 0 && !check(game,curTurn))
+                {
+                    game.mouseX = PossiblePositions[j].first*64;
+                    game.mouseY = PossiblePositions[j].second*64;
+                    lastChoosenPiece = tmpPiece;
+                }
+                bestValue = std::max(bestValue,playValue);
+            }
+            else
+                bestValue = std::min(bestValue,playValue + getNextMove(game,depth + 1,1 - curTurn));
+            game.Board[oldX][oldY] = game.Board[PossiblePositions[j].first][PossiblePositions[j].second];
+            game.Board[PossiblePositions[j].first][PossiblePositions[j].second] = target;
+            tmpPiece->getImg()->setPosition(oldX,oldY);
+            if(promoted)
+                tmpPiece->PieceType = PIECE_TYPE::PAWN;
+            if(target)
+                target->isDead = false;
+        }
+    }
+    return bestValue;
+}
+void GameController::undo(Init& game)
+{
+    if(undoMove.size() <= 0)
+        return;
+    operation* tmp = undoMove.back();
+    undoMove.pop_back();
+    redoMove.push_back(tmp);
+    if(!tmp->promotion)
+    {
+        tmp->attacker->getImg()->setPosition(tmp->fromX,tmp->fromY);
+        game.Board[tmp->fromX][tmp->fromY] = tmp->attacker;
+        if(tmp->attacked)
+        {
+            tmp->attacked->isDead = false;
+            if(tmp->attacked->pieceColor == PIECE_COLOR::BLACK)
+                game.deadBlack--;
+            else
+                game.deadWhite--;
+            tmp->attacked->getImg()->setPosition(tmp->toX,tmp->toY);
+            game.Board[tmp->toX][tmp->toY] = tmp->attacked;
+        } else game.Board[tmp->toX][tmp->toY] = NULL;
+        turn = !turn;
+        lastChoosenPiece = NULL;
+        ClearTileEffects(TileEffects);
+    } else
+    {
+        tmp->attacker->PieceType = PIECE_TYPE::PAWN;
+        tmp->attacker->getImg()->setCropDetails(64*5,tmp->attacker->pieceColor*64,64,64);
+        undo(game);
+    }
+    return;
+}
+void GameController::redo(Init& game)
+{
+    if(redoMove.size() <= 0)
+        return;
+    operation* tmp = redoMove.back();
+    redoMove.pop_back();
+    undoMove.push_back(tmp);
+    if(!tmp->promotion)
+    {
+        tmp->attacker->getImg()->setPosition(tmp->toX,tmp->toY);
+        game.Board[tmp->toX][tmp->toY] = tmp->attacker;
+        game.Board[tmp->fromX][tmp->fromY] = NULL;
+        if(tmp->attacked)
+            killPiece(game,tmp->attacked);
+        turn = !turn;
+        lastChoosenPiece = NULL;
+        ClearTileEffects(TileEffects);
+        if(redoMove.size() && redoMove.back()->promotion)
+            redo(game);
+    } else {
+        tmp->attacker->PieceType = tmp->fromX;
+        tmp->attacker->getImg()->setCropDetails(game.TypeToX(tmp->fromX),tmp->attacker->pieceColor*64,64,64);
+    }
+    return;
 }
 void GameController::MovePiece(Init& game)
 {
     int MoveX = (game.mouseX/64);
     int MoveY = (game.mouseY/64);
-    if(!validMove(MoveX,MoveY) && !turn)
+    if(!validMove(MoveX,MoveY))
         return;
     int lastX = lastChoosenPiece->getImg()->getX();
     int lastY = lastChoosenPiece->getImg()->getY();
     Piece* curPiece = game.Board[MoveX][MoveY];
-    if(curPiece != NULL)
-        curPiece->isDead = true;
     lastChoosenPiece->getImg()->setPosition(MoveX,MoveY);
     game.Board[MoveX][MoveY] = game.Board[lastX][lastY];
     game.Board[lastX][lastY] = NULL;
-    if(!turn && checkMate(game))
+    if(curPiece)
+        killPiece(game,curPiece);
+    if(check(game,turn))
     {
-        if(curPiece != NULL)
-            curPiece->isDead = false;
         lastChoosenPiece->getImg()->setPosition(lastX,lastY);
-        invalidMoveCounter = 1000;
-        game.Board[MoveX][MoveY] = curPiece;
+        if(curPiece)
+            unkillPiece(game,curPiece,MoveX,MoveY);
+        invalidMoveCounter = 80;
         game.Board[lastX][lastY] = lastChoosenPiece;
+        game.Board[MoveX][MoveY] = curPiece;
         return;
     }
-    if(curPiece != NULL)
+    operation* newOp = new operation();
+    newOp->setOp(lastChoosenPiece,curPiece,lastX,lastY,MoveX,MoveY,false);
+    undoMove.push_back(newOp);
+    for(std::vector<operation*>::iterator it = redoMove.begin();it != redoMove.end();it++)
+        delete (*it);
+    redoMove.clear();
+    if(MoveY == 0 && lastChoosenPiece->pieceColor == PIECE_COLOR::WHITE && lastChoosenPiece->PieceType == PIECE_TYPE::PAWN)
     {
-        removePiece(game,curPiece);
-        if(curPiece->PieceType == 4)
-            gameDone = true;
+        if(!isAI)
+            SDL_ShowSimpleMessageBox(0,"Promotion!","press 0 for ROOK,1 for Knight,2 for Bishop,3 for Queen",NULL),game.promotionPiece = lastChoosenPiece;
+        else
+        {
+            lastChoosenPiece->getImg()->setCropDetails(64,lastChoosenPiece->pieceColor*64,64,64);
+            lastChoosenPiece->PieceType = PIECE_TYPE::QUEEN;
+            operation *tmp = new operation();
+            tmp->setOp(lastChoosenPiece,NULL,PIECE_TYPE::QUEEN,lastChoosenPiece->pieceColor,-1,-1,true);
+            undoMove.push_back(tmp);
+        }
     }
+    if(MoveY == 7 && lastChoosenPiece->pieceColor == PIECE_COLOR::BLACK && lastChoosenPiece->PieceType == PIECE_TYPE::PAWN)
+        SDL_ShowSimpleMessageBox(0,"Promotion!","press 0 for ROOK,1 for Knight,2 for Bishop,3 for Queen",NULL),game.promotionPiece = lastChoosenPiece;
     turn = !turn;
     lastChoosenPiece = NULL;
     ClearTileEffects(TileEffects);
 }
 
+/*
+int AiMove(depth,turn)
+{
+    if(depth = 0)
+        return evaluationBoard()
+
+        if(turn)
+        {
+            curValue = -INF;
+            for i = 0,allPossibleMoves do
+            {
+                if(validMove(i))
+                {
+                    doMove(i)
+                    int nextAi = AiMove(depth - 1,1 - turn)
+                    if(nextAi >= curValue)
+                        nextMove = i,nextAi = curValue
+                    undoMove(i)
+                }
+            }
+            return curValue;
+        } else {
+            curValue = INF;
+            for i = 0,allPossibleMoves do
+            {
+                if(validMove(i))
+                {
+                    doMove(i)
+                    int nextAi = AiMove(depth - 1,1 - turn)
+                    if(nextAi <= curValue)
+                        nextAi = curValue
+                    undoMove(i)
+                }
+            }
+            return curValue;
+        }
+    return 0
+}
+*/

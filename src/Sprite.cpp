@@ -1,4 +1,4 @@
-#include "Sprite.h"
+#include "../Include/Sprite.h"
 #include <vector>
 #include <iostream>
 #include <cmath>
